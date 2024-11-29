@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 
 // Tamaño del tablero
@@ -7,9 +6,8 @@ $filas = 6;
 $columnas = 6;
 $minas = 3;
 
-// Si aún no hay un tablero en la sesión, lo creamos
-if (!isset($_SESSION['tablero'])) {
-    // Crear tablero vacío
+// Función para crear un tablero vacío
+function crearTablero($filas, $columnas) {
     $tablero = [];
     for ($i = 0; $i < $filas; $i++) {
         for ($j = 0; $j < $columnas; $j++) {
@@ -20,8 +18,11 @@ if (!isset($_SESSION['tablero'])) {
             ];
         }
     }
+    return $tablero;
+}
 
-    // Colocar minas aleatoriamente
+// Función para colocar las minas aleatoriamente
+function colocarMinas(&$tablero, $filas, $columnas, $minas) {
     $minas_colocadas = 0;
     while ($minas_colocadas < $minas) {
         $x = rand(0, $filas - 1);
@@ -42,8 +43,12 @@ if (!isset($_SESSION['tablero'])) {
             }
         }
     }
+}
 
-    // Guardamos el tablero en la sesión
+// Si aún no hay un tablero en la sesión, lo creamos
+if (!isset($_SESSION['tablero'])) {
+    $tablero = crearTablero($filas, $columnas);
+    colocarMinas($tablero, $filas, $columnas, $minas);
     $_SESSION['tablero'] = $tablero;
     $_SESSION['jugando'] = true;
     $_SESSION['perdio'] = false;
@@ -64,15 +69,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['tablero'][$x][$y]['descubierto'] = true;
 
         // Verificar si el jugador ha ganado
-        $celdas_descubiertas = 0;
+        $celdas_no_descubiertas = 0;
         foreach ($_SESSION['tablero'] as $fila) {
             foreach ($fila as $celda) {
-                if ($celda['descubierto'] && !$celda['minado']) {
-                    $celdas_descubiertas++;
+                if (!$celda['descubierto'] && !$celda['minado']) {
+                    $celdas_no_descubiertas++;
                 }
             }
         }
-        if ($celdas_descubiertas === ($filas * $columnas - $minas)) {
+
+        if ($celdas_no_descubiertas === 0) {
             $_SESSION['gano'] = true;
             $_SESSION['jugando'] = false;
         }
