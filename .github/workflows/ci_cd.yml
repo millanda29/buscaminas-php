@@ -21,27 +21,19 @@ jobs:
       id: versioning
       run: |
         if [ ! -f VERSION ]; then
-          echo "v1.0" > VERSION  # Si no existe el archivo de versión, iniciar con v1.0
+          echo "v1.0" > VERSION
         fi
-        
-        # Leer la versión actual
         CURRENT_VERSION=$(cat VERSION)
-        
-        # Separar la versión mayor y menor
-        MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1 | cut -c2-)
-        MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
-        
-        # Incrementar el número menor si es menor que 9
-        if [ $MINOR -lt 9 ]; then
-          NEW_MINOR=$((MINOR + 1))
-          NEW_VERSION="v${MAJOR}.${NEW_MINOR}"
-        else
-          # Si el número menor llega a 9, incrementar el mayor y resetear el menor
-          NEW_MAJOR=$((MAJOR + 1))
+        MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1 | cut -c2-)  # Extraer la versión mayor
+        MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)  # Extraer la versión menor
+        if [ $MINOR -eq 9 ]; then
+          NEW_MAJOR=$((MAJOR + 1))  # Incrementar versión mayor si la menor llega a 9
+          NEW_MINOR=0  # Reiniciar la versión menor a 0
           NEW_VERSION="v${NEW_MAJOR}.0"
+        else
+          NEW_MINOR=$((MINOR + 1))  # Incrementar solo la versión menor
+          NEW_VERSION="v${MAJOR}.${NEW_MINOR}"
         fi
-        
-        # Actualizar la versión en el archivo y enviarla como salida
         echo "$NEW_VERSION" > VERSION
         echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         echo "next=$NEW_VERSION" >> $GITHUB_OUTPUT
