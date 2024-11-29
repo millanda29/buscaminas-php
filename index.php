@@ -6,7 +6,7 @@ $filas = 6;
 $columnas = 6;
 $minas = 3;
 
-// Si aún no hay un tablero en la sesión, lo creamos
+// Inicializar el tablero solo si no existe en la sesión
 if (!isset($_SESSION['tablero'])) {
     // Crear tablero vacío
     $tablero = [];
@@ -42,7 +42,7 @@ if (!isset($_SESSION['tablero'])) {
         }
     }
 
-    // Guardamos el tablero en la sesión
+    // Guardar el tablero en la sesión
     $_SESSION['tablero'] = $tablero;
     $_SESSION['jugando'] = true;
     $_SESSION['perdio'] = false;
@@ -51,10 +51,10 @@ if (!isset($_SESSION['tablero'])) {
 
 // Verificar si el jugador hizo clic en una celda
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $x = $_POST['x'];
-    $y = $_POST['y'];
+    $x = intval($_POST['x']);
+    $y = intval($_POST['y']);
 
-    // Si el jugador hace clic en una mina, pierde el juego
+    // Si el jugador hace clic en una mina, pierde
     if ($_SESSION['tablero'][$x][$y]['minado']) {
         $_SESSION['perdio'] = true;
         $_SESSION['jugando'] = false;
@@ -76,6 +76,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['jugando'] = false;
         }
     }
+
+    // Responder con HTML parcial si es una solicitud AJAX
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        include 'partial-game-container.php';
+        exit;
+    }
 }
 
 $tablero = $_SESSION['tablero'];
@@ -87,7 +93,7 @@ $tablero = $_SESSION['tablero'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buscaminas</title>
-    <link rel="icon" href="./assets/img/fondo.png" type="image/png">
+    <link rel="icon" href="./assets/img/icon.png" type="image/png">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
@@ -95,41 +101,10 @@ $tablero = $_SESSION['tablero'];
 <div class="contenedor">
     <h1>Buscaminas</h1>
 
+    <!-- Contenedor del juego -->
     <div id="game-container">
-        <?php if (!$_SESSION['jugando']): ?>
-            <div class="mensaje <?= $_SESSION['gano'] ? 'win' : 'lose' ?>">
-                <?= $_SESSION['gano'] ? '¡Ganaste! 🎉' : '¡Perdiste! 💥' ?>
-            </div>
-            <a href="reiniciar.php" style="margin-top: 20px; display: inline-block;">Jugar de nuevo</a>
-        <?php else: ?>
-            <table>
-                <?php for ($i = 0; $i < $filas; $i++): ?>
-                    <tr>
-                        <?php for ($j = 0; $j < $columnas; $j++): ?>
-                            <td class="<?= $_SESSION['tablero'][$i][$j]['descubierto'] ? 'descubierto' : '' ?>"
-                                <?php if (!$_SESSION['tablero'][$i][$j]['descubierto']): ?>
-                                    onclick="enviarCelda(<?= $i ?>, <?= $j ?>)">
-                                <?php endif; ?>
-                                >
-                                <?php
-                                if ($_SESSION['tablero'][$i][$j]['descubierto']) {
-                                    if ($_SESSION['tablero'][$i][$j]['minado']) {
-                                        echo '💣';
-                                    } else {
-                                        echo $_SESSION['tablero'][$i][$j]['vecinas'] > 0 ? $_SESSION['tablero'][$i][$j]['vecinas'] : '';
-                                    }
-                                } else {
-                                    echo '';
-                                }
-                                ?>
-                            </td>
-                        <?php endfor; ?>
-                    </tr>
-                <?php endfor; ?>
-            </table>
-        <?php endif; ?>
+        <?php include 'partial-game-container.php'; ?>
     </div>
-
 </div>
 
 <script src="./assets/js/game.js"></script>
