@@ -1,14 +1,14 @@
 <?php
 session_start();
 
-// Tamaño del tablero
+// Parámetros del juego
 $filas = 6;
 $columnas = 6;
 $minas = 3;
 
-// Inicializar el tablero solo si no existe en la sesión
+// Si no hay tablero, inicializarlo
 if (!isset($_SESSION['tablero'])) {
-    // Crear tablero vacío
+    // Inicializar tablero
     $tablero = [];
     for ($i = 0; $i < $filas; $i++) {
         for ($j = 0; $j < $columnas; $j++) {
@@ -20,7 +20,7 @@ if (!isset($_SESSION['tablero'])) {
         }
     }
 
-    // Colocar minas aleatoriamente
+    // Colocar minas
     $minas_colocadas = 0;
     while ($minas_colocadas < $minas) {
         $x = rand(0, $filas - 1);
@@ -28,8 +28,7 @@ if (!isset($_SESSION['tablero'])) {
         if (!$tablero[$x][$y]['minado']) {
             $tablero[$x][$y]['minado'] = true;
             $minas_colocadas++;
-
-            // Actualizar las celdas vecinas
+            // Actualizar vecinas
             for ($dx = -1; $dx <= 1; $dx++) {
                 for ($dy = -1; $dy <= 1; $dy++) {
                     $nx = $x + $dx;
@@ -42,27 +41,27 @@ if (!isset($_SESSION['tablero'])) {
         }
     }
 
-    // Guardar el tablero en la sesión
+    // Guardar estado inicial
     $_SESSION['tablero'] = $tablero;
     $_SESSION['jugando'] = true;
-    $_SESSION['perdio'] = false;
     $_SESSION['gano'] = false;
+    $_SESSION['perdio'] = false;
 }
 
-// Verificar si el jugador hizo clic en una celda
+// Procesar clic en una celda
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $x = intval($_POST['x']);
-    $y = intval($_POST['y']);
+    $x = $_POST['x'];
+    $y = $_POST['y'];
 
-    // Si el jugador hace clic en una mina, pierde
+    // Verificar si es mina
     if ($_SESSION['tablero'][$x][$y]['minado']) {
-        $_SESSION['perdio'] = true;
         $_SESSION['jugando'] = false;
+        $_SESSION['perdio'] = true;
     } else {
-        // Descubrir la celda
+        // Descubrir celda
         $_SESSION['tablero'][$x][$y]['descubierto'] = true;
 
-        // Verificar si el jugador ha ganado
+        // Verificar victoria
         $celdas_descubiertas = 0;
         foreach ($_SESSION['tablero'] as $fila) {
             foreach ($fila as $celda) {
@@ -71,20 +70,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+
         if ($celdas_descubiertas === ($filas * $columnas - $minas)) {
-            $_SESSION['gano'] = true;
             $_SESSION['jugando'] = false;
+            $_SESSION['gano'] = true;
         }
     }
 
-    // Responder con HTML parcial si es una solicitud AJAX
-    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-        include 'partial-game-container.php';
-        exit;
-    }
+    // Devolver contenido actualizado
+    include 'partial-game-container.php';
+    exit;
 }
-
-$tablero = $_SESSION['tablero'];
 ?>
 
 <!DOCTYPE html>
@@ -97,17 +93,12 @@ $tablero = $_SESSION['tablero'];
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-
 <div class="contenedor">
     <h1>Buscaminas</h1>
-
-    <!-- Contenedor del juego -->
     <div id="game-container">
         <?php include 'partial-game-container.php'; ?>
     </div>
 </div>
-
 <script src="./assets/js/game.js"></script>
-
 </body>
 </html>

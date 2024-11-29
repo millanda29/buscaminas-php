@@ -5,14 +5,11 @@
     <a href="reiniciar.php" style="margin-top: 20px; display: inline-block;">Jugar de nuevo</a>
 <?php else: ?>
     <table>
-        <?php for ($i = 0; $i < $filas; $i++): ?>
+        <?php for ($i = 0; $i < count($_SESSION['tablero']); $i++): ?>
             <tr>
-                <?php for ($j = 0; $j < $columnas; $j++): ?>
+                <?php for ($j = 0; $j < count($_SESSION['tablero'][$i]); $j++): ?>
                     <td class="<?= $_SESSION['tablero'][$i][$j]['descubierto'] ? 'descubierto' : '' ?>"
-                        <?php if (!$_SESSION['tablero'][$i][$j]['descubierto']): ?>
-                            onclick="enviarCelda(<?= $i ?>, <?= $j ?>)">
-                        <?php endif; ?>
-                        >
+                        onclick="enviarCelda(<?= $i ?>, <?= $j ?>)">
                         <?php
                         if ($_SESSION['tablero'][$i][$j]['descubierto']) {
                             if ($_SESSION['tablero'][$i][$j]['minado']) {
@@ -20,8 +17,6 @@
                             } else {
                                 echo $_SESSION['tablero'][$i][$j]['vecinas'] > 0 ? $_SESSION['tablero'][$i][$j]['vecinas'] : '';
                             }
-                        } else {
-                            echo '';
                         }
                         ?>
                     </td>
