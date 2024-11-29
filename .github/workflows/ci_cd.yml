@@ -51,7 +51,7 @@ jobs:
     # 4. Construir y subir la imagen Docker a DockerHub
     - name: Build and push Docker image
       run: |
-        NEW_VERSION=${{ steps.versioning.outputs.next }}
+        NEW_VERSION=${{ steps.get_version.outputs.next }}
         docker build . --file Dockerfile \
           --tag ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:$NEW_VERSION \
           --tag ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:latest
