@@ -86,4 +86,4 @@ jobs:
           sudo docker stop buscaminas-php && \
           sudo docker rm buscaminas-php || true
           # Actualización del puerto de 80 a 8000
-          sudo docker run -d --name buscaminas-php -p 8000:80 ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:latest
+          sudo docker run -d --name buscaminas-php -p 80:8000 ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:latest
