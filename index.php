@@ -6,8 +6,9 @@ $filas = 6;
 $columnas = 6;
 $minas = 3;
 
-// Función para crear un tablero vacío
-function crearTablero($filas, $columnas) {
+// Si aún no hay un tablero en la sesión, lo creamos
+if (!isset($_SESSION['tablero'])) {
+    // Crear tablero vacío
     $tablero = [];
     for ($i = 0; $i < $filas; $i++) {
         for ($j = 0; $j < $columnas; $j++) {
@@ -18,11 +19,8 @@ function crearTablero($filas, $columnas) {
             ];
         }
     }
-    return $tablero;
-}
 
-// Función para colocar las minas aleatoriamente
-function colocarMinas(&$tablero, $filas, $columnas, $minas) {
+    // Colocar minas aleatoriamente
     $minas_colocadas = 0;
     while ($minas_colocadas < $minas) {
         $x = rand(0, $filas - 1);
@@ -43,12 +41,8 @@ function colocarMinas(&$tablero, $filas, $columnas, $minas) {
             }
         }
     }
-}
 
-// Si aún no hay un tablero en la sesión, lo creamos
-if (!isset($_SESSION['tablero'])) {
-    $tablero = crearTablero($filas, $columnas);
-    colocarMinas($tablero, $filas, $columnas, $minas);
+    // Guardamos el tablero en la sesión
     $_SESSION['tablero'] = $tablero;
     $_SESSION['jugando'] = true;
     $_SESSION['perdio'] = false;
@@ -69,16 +63,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['tablero'][$x][$y]['descubierto'] = true;
 
         // Verificar si el jugador ha ganado
-        $celdas_no_descubiertas = 0;
+        $celdas_descubiertas = 0;
         foreach ($_SESSION['tablero'] as $fila) {
             foreach ($fila as $celda) {
-                if (!$celda['descubierto'] && !$celda['minado']) {
-                    $celdas_no_descubiertas++;
+                if ($celda['descubierto'] && !$celda['minado']) {
+                    $celdas_descubiertas++;
                 }
             }
         }
-
-        if ($celdas_no_descubiertas === 0) {
+        if ($celdas_descubiertas === ($filas * $columnas - $minas)) {
             $_SESSION['gano'] = true;
             $_SESSION['jugando'] = false;
         }
@@ -86,7 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $tablero = $_SESSION['tablero'];
-
 ?>
 
 <!DOCTYPE html>
@@ -160,45 +152,64 @@ $tablero = $_SESSION['tablero'];
 <div class="contenedor">
     <h1>Buscaminas</h1>
 
-    <?php if (!$_SESSION['jugando']): ?>
-        <div class="mensaje <?= $_SESSION['gano'] ? 'win' : 'lose' ?>">
-            <?= $_SESSION['gano'] ? '¡Ganaste! 🎉' : '¡Perdiste! 💥' ?>
-        </div>
-        <a href="reiniciar.php" style="margin-top: 20px; display: inline-block;">Jugar de nuevo</a>
-    <?php else: ?>
-        <table>
-            <?php for ($i = 0; $i < $filas; $i++): ?>
-                <tr>
-                    <?php for ($j = 0; $j < $columnas; $j++): ?>
-                        <td class="<?= $_SESSION['tablero'][$i][$j]['descubierto'] ? 'descubierto' : '' ?>"
-                            <?php if (!$_SESSION['tablero'][$i][$j]['descubierto']): ?>
-                            onclick="document.getElementById('x').value = <?= $i ?>; document.getElementById('y').value = <?= $j ?>; document.getElementById('gameForm').submit();">
-                            <?php endif; ?>
-                            >
-                            <?php
-                            if ($_SESSION['tablero'][$i][$j]['descubierto']) {
-                                if ($_SESSION['tablero'][$i][$j]['minado']) {
-                                    echo '💣';
+    <div id="game-container">
+        <?php if (!$_SESSION['jugando']): ?>
+            <div class="mensaje <?= $_SESSION['gano'] ? 'win' : 'lose' ?>">
+                <?= $_SESSION['gano'] ? '¡Ganaste! 🎉' : '¡Perdiste! 💥' ?>
+            </div>
+            <a href="reiniciar.php" style="margin-top: 20px; display: inline-block;">Jugar de nuevo</a>
+        <?php else: ?>
+            <table>
+                <?php for ($i = 0; $i < $filas; $i++): ?>
+                    <tr>
+                        <?php for ($j = 0; $j < $columnas; $j++): ?>
+                            <td class="<?= $_SESSION['tablero'][$i][$j]['descubierto'] ? 'descubierto' : '' ?>"
+                                <?php if (!$_SESSION['tablero'][$i][$j]['descubierto']): ?>
+                                    onclick="enviarCelda(<?= $i ?>, <?= $j ?>)">
+                                <?php endif; ?>
+                                >
+                                <?php
+                                if ($_SESSION['tablero'][$i][$j]['descubierto']) {
+                                    if ($_SESSION['tablero'][$i][$j]['minado']) {
+                                        echo '💣';
+                                    } else {
+                                        echo $_SESSION['tablero'][$i][$j]['vecinas'] > 0 ? $_SESSION['tablero'][$i][$j]['vecinas'] : '';
+                                    }
                                 } else {
-                                    echo $_SESSION['tablero'][$i][$j]['vecinas'] > 0 ? $_SESSION['tablero'][$i][$j]['vecinas'] : '';
+                                    echo '';
                                 }
-                            } else {
-                                echo '';
-                            }
-                            ?>
-                        </td>
-                    <?php endfor; ?>
-                </tr>
-            <?php endfor; ?>
-        </table>
-
-        <form id="gameForm" method="POST" style="display:none;">
-            <input type="hidden" id="x" name="x">
-            <input type="hidden" id="y" name="y">
-        </form>
-    <?php endif; ?>
+                                ?>
+                            </td>
+                        <?php endfor; ?>
+                    </tr>
+                <?php endfor; ?>
+            </table>
+        <?php endif; ?>
+    </div>
 
 </div>
+
+<script>
+    // Función para enviar la celda seleccionada mediante AJAX
+    function enviarCelda(x, y) {
+        // Crear un FormData con los valores de la celda
+        var formData = new FormData();
+        formData.append('x', x);
+        formData.append('y', y);
+
+        // Usar fetch para enviar los datos
+        fetch('index.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text()) // Obtener la respuesta del servidor
+        .then(data => {
+            // Actualizar la vista con la nueva información
+            document.getElementById('game-container').innerHTML = data;
+        })
+        .catch(error => console.error('Error al enviar la celda:', error));
+    }
+</script>
 
 </body>
 </html>
