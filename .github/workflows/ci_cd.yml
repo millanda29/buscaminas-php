@@ -64,13 +64,11 @@ jobs:
         key: ${{ secrets.EC2_SSH_KEY }}
         port: 22
         script: |
-          echo "Next version: ${{ steps.versioning.outputs.next }}"
           sudo yum update -y
           sudo yum install -y docker
           sudo service docker start
-          sudo usermod -a -G docker ec2-user
-          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:${{ steps.versioning.outputs.next }}
+          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:latest
           sudo docker ps -q --filter "name=buscaminas-php" | grep -q . && \
           sudo docker stop buscaminas-php && \
           sudo docker rm buscaminas-php || true
-          sudo docker run -d --name buscaminas-php -p 80:80 ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:${{ steps.versioning.outputs.next }}
+          sudo docker run -d --name buscaminas-php -p 80:80 ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:latest
