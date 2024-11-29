@@ -1,0 +1,76 @@
+name: Build, Dockerize, and Deploy to EC2
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout del código fuente
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 2. Leer y actualizar la versión de la imagen
+    - name: Read and increment version
+      id: versioning
+      run: |
+        if [ ! -f VERSION ]; then
+          echo "v1.0" > VERSION
+        fi
+        CURRENT_VERSION=$(cat VERSION)
+        MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1 | cut -c2-)
+        MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+        NEW_MINOR=$((MINOR + 1))
+        NEW_VERSION="v${MAJOR}.${NEW_MINOR}"
+        echo "$NEW_VERSION" > VERSION
+        echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "next=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+    # 3. Log in a DockerHub
+    - name: Log in to DockerHub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    # 4. Construir y subir la imagen Docker a DockerHub
+    - name: Build and push Docker image
+      run: |
+        NEW_VERSION=${{ steps.versioning.outputs.next }}
+        docker build . --file Dockerfile \
+          --tag ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:$NEW_VERSION \
+          --tag ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:$NEW_VERSION
+        docker push ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:latest
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+    # 1. Conectar a EC2 y desplegar la aplicación
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        port: 22
+        script: |
+          sudo yum update -y
+          sudo yum install -y docker
+          sudo service docker start
+          sudo usermod -a -G docker ec2-user
+          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:${{ steps.versioning.outputs.next }}
+          sudo docker ps -q --filter "name=buscaminas-php" | grep -q . && \
+          sudo docker stop buscaminas-php && \
+          sudo docker rm buscaminas-php || true
+          sudo docker run -d --name buscaminas-php -p 80:80 \
+            ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:${{ steps.versioning.outputs.next }}
