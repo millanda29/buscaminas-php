@@ -1,4 +1,4 @@
-name: Build, Dockerize, and Deploy to EC2
+name: Deploy to EC2 with Docker Image
 
 on:
   push:
@@ -72,5 +72,4 @@ jobs:
           sudo docker ps -q --filter "name=buscaminas-php" | grep -q . && \
           sudo docker stop buscaminas-php && \
           sudo docker rm buscaminas-php || true
-          sudo docker run -d --name buscaminas-php -p 80:80 \
-            ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:${{ steps.versioning.outputs.next }}
+          sudo docker run -d --name buscaminas-php -p 80:80 ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:${{ steps.versioning.outputs.next }}
