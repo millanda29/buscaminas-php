@@ -1,0 +1,66 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-image: url('../img/fondo.png');
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+.contenedor {
+    width: 300px;
+    margin: 20px;
+    padding: 20px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+td {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    background-color: #f0f0f0;
+    font-size: 18px;
+}
+
+td.descubierto {
+    background-color: #fff;
+}
+
+td.minado {
+    background-color: red;
+}
+
+td:hover {
+    background-color: #e0e0e0;
+}
+
+.mensaje {
+    margin-top: 20px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.win {
+    color: green;
+}
+
+.lose {
+    color: red;
+}
