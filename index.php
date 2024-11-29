@@ -3,9 +3,9 @@
 session_start();
 
 // Tamaño del tablero
-$filas = 5;
-$columnas = 5;
-$minas = 5;
+$filas = 6;
+$columnas = 6;
+$minas = 3;
 
 // Si aún no hay un tablero en la sesión, lo creamos
 if (!isset($_SESSION['tablero'])) {
@@ -89,11 +89,12 @@ $tablero = $_SESSION['tablero'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buscaminas</title>
+    <link rel="icon" href="./img/icon.png" type="image/png">
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            background-color: #f4f4f4;
+            background-image: url('./img/fondo.png');
             margin: 0;
             padding: 0;
             display: flex;
