@@ -16,44 +16,30 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # 2. Leer y actualizar la versión de la imagen
-    - name: Read and increment version
-      id: versioning
+    # 2. Obtener la versión más alta desde Docker Hub
+    - name: Get the highest version from DockerHub
+      id: get_version
       run: |
-        # Verifica si el archivo VERSION ya existe
-        if [ ! -f VERSION ]; then
-          echo "v1.0" > VERSION
-        fi
-        
-        # Lee la versión actual
-        CURRENT_VERSION=$(cat VERSION)
-        
-        # Divide la versión en partes mayor y menor
-        MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1 | cut -c2-)
-        MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
-        
-        # Lógica para incrementar la versión
-        if [ "$MINOR" -lt 9 ]; then
+        # Consultar los tags existentes de la imagen en Docker Hub
+        response=$(curl -s https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/buscaminas-php/tags/)
+          
+        # Filtrar los tags que siguen el formato v<major>.<minor> y extraer solo los números
+        tags=$(echo $response | jq -r '.results[] | select(.name | test("^v[0-9]+\\.[0-9]+$")) | .name' | sed 's/^v//')
+
+        # Si no hay tags, empezar desde v1.0
+        if [ -z "$tags" ]; then
+          NEW_VERSION="v1.0"
+        else
+          # Obtener el tag más alto y extraer la parte mayor y menor
+          highest_version=$(echo "$tags" | sort -V | tail -n 1)
+          MAJOR=$(echo $highest_version | cut -d. -f1)
+          MINOR=$(echo $highest_version | cut -d. -f2) 
+          # Incrementar la versión menor
           NEW_MINOR=$((MINOR + 1))
-        else
-          NEW_MINOR=0
-          NEW_MAJOR=$((MAJOR + 1))
-          NEW_VERSION="v${NEW_MAJOR}.0"
-        fi
-        
-        # Si no hay cambio mayor, se incrementa solo la versión menor
-        if [ -z "$NEW_MAJOR" ]; then
           NEW_VERSION="v${MAJOR}.${NEW_MINOR}"
-        else
-          NEW_VERSION="v${NEW_MAJOR}.0"
         fi
-        
-        # Actualiza el archivo VERSION
-        echo "$NEW_VERSION" > VERSION
-        
-        # Salida de la versión actual y la siguiente
-        echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-        echo "next=$NEW_VERSION" >> $GITHUB_OUTPUT
+          # Salida de la versión a usar
+          echo "next=$NEW_VERSION" >> $GITHUB_OUTPUT
 
     # 3. Log in a DockerHub
     - name: Log in to DockerHub
