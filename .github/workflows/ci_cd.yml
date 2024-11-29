@@ -64,6 +64,7 @@ jobs:
         key: ${{ secrets.EC2_SSH_KEY }}
         port: 22
         script: |
+          echo "Next version: ${{ steps.versioning.outputs.next }}"
           sudo yum update -y
           sudo yum install -y docker
           sudo service docker start
