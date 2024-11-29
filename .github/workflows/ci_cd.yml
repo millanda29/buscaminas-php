@@ -21,13 +21,27 @@ jobs:
       id: versioning
       run: |
         if [ ! -f VERSION ]; then
-          echo "v1.0" > VERSION
+          echo "v1.0" > VERSION  # Si no existe el archivo de versión, iniciar con v1.0
         fi
+        
+        # Leer la versión actual
         CURRENT_VERSION=$(cat VERSION)
+        
+        # Separar la versión mayor y menor
         MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1 | cut -c2-)
         MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
-        NEW_MINOR=$((MINOR + 1))
-        NEW_VERSION="v${MAJOR}.${NEW_MINOR}"
+        
+        # Incrementar el número menor si es menor que 9
+        if [ $MINOR -lt 9 ]; then
+          NEW_MINOR=$((MINOR + 1))
+          NEW_VERSION="v${MAJOR}.${NEW_MINOR}"
+        else
+          # Si el número menor llega a 9, incrementar el mayor y resetear el menor
+          NEW_MAJOR=$((MAJOR + 1))
+          NEW_VERSION="v${NEW_MAJOR}.0"
+        fi
+        
+        # Actualizar la versión en el archivo y enviarla como salida
         echo "$NEW_VERSION" > VERSION
         echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         echo "next=$NEW_VERSION" >> $GITHUB_OUTPUT
@@ -71,4 +85,5 @@ jobs:
           sudo docker ps -q --filter "name=buscaminas-php" | grep -q . && \
           sudo docker stop buscaminas-php && \
           sudo docker rm buscaminas-php || true
-          sudo docker run -d --name buscaminas-php -p 80:80 ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:latest
+          # Actualización del puerto de 80 a 8000
+          sudo docker run -d --name buscaminas-php -p 8000:80 ${{ secrets.DOCKER_USERNAME }}/buscaminas-php:latest
