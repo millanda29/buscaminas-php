@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 <div class="contenedor">
-    <h1>Buscaminas</h1>
+    <h1>Buscaminas Hola Mundo Isaac 452115</h1>
     <div id="game-container">
         <?php include 'partial-game-container.php'; ?>
     </div>
